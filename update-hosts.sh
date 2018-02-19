@@ -4,7 +4,7 @@
 #
 # Edit DOMAIN field.
 DOMAIN=
-IP=`cat /etc/hosts | grep bestrockers | awk '{print $1}'`
+IP=`cat /etc/hosts | grep $DOMAIN | awk '{print $1}'`
 NEW_IP=`nslookup $DOMAIN | grep Address | tail -n 1 | awk '{print $2}'`
 
 
