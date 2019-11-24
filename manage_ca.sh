@@ -4,6 +4,7 @@ PATH_SERVER="server"
 PATH_CLIENT_CONFIG="client-configs"
 
 EASYRSA="EasyRSA-3.0.4"
+CURPATH=$(pwd)
 
 if [ "$#" -eq "0" ]; then
         echo "./manage_ca [build-ca] [server-cert <domain>] [client-cert <name>]"
@@ -19,7 +20,7 @@ function setup(){
     fi
     cd "${EASYRSA}"
     export PATH=$PATH:`pwd`
-    cd ../
+    cd ${CURPATH}
 }
 
 # create CA (default validity time: 10 years)
@@ -60,7 +61,7 @@ if [ $1 = "build-ca" ]; then
                 exit 1
         fi
 
-        # set rsa key size to 4096
+        # set rsa key size to 4096 if you want
         echo "set_var EASYRSA_KEY_SIZE        2048" >> vars
 
         easyrsa init-pki
@@ -68,7 +69,7 @@ if [ $1 = "build-ca" ]; then
         
         mv -f pki ../$PATH_CA
         
-        cd ../
+        cd ${CURPATH}
         if [ ! -d "$PATH_CLIENT_CONFIG" ]; then
                 mkdir $PATH_CLIENT_CONFIG
                 mkdir -p $PATH_CLIENT_CONFIG/keys
@@ -79,6 +80,7 @@ if [ $1 = "build-ca" ]; then
         
 
 elif [ $1 = "server-cert" ]; then
+        cd ${CURPATH}
         # Check CA is existing
         if [ ! -d "$PATH_CA" ]; then
                 echo "CA not existing, run FIRST ./manage_ca build-ca "
@@ -115,29 +117,29 @@ elif [ $1 = "server-cert" ]; then
         mv pki/private/$DOMAIN.key ../$PATH_SERVER/
         
         easyrsa gen-dh
-        echo "Server crt and key succesfully created and exported to server/"
+        echo "Server crt and key successfully created and exported to server/"
         
 elif [ $1 = "client-cert" ]; then
         #
         # create CLIENT cert
         #
+        cd ${CURPATH}
         if [ ! -d "$PATH_CLIENT_CONFIG" ]; then
                 mkdir $PATH_CLIENT_CONFIG
-                mkdir $PATH_CLIENT_CONFIG/files
                 mkdir $PATH_CLIENT_CONFIG/keys
         fi;
-        
+        setup        
         if [ -z "$2" ];then
             echo "<name> is missing as 2th argument. exiting."
             exit 1
         fi
         NAME=$2
-        echo "Creating a new server certificate for domain: $NAME"
+        echo "Creating a new client certificate for domain: $NAME"
         
         cd $PATH_CA
         easyrsa gen-req "$NAME" nopass
         cp pki/private/$NAME.key ../$PATH_CLIENT_CONFIG/keys/
-        echo "Signing certificate by CA"
+        echo "Signing client certificate by CA"
         easyrsa sign-req client "$NAME"
         cp pki/issued/$NAME.crt ../$PATH_CLIENT_CONFIG/keys/
         echo "crt and key in $PATH_CLIENT_CONFIG/keys"
